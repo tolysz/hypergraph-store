@@ -1,4 +1,12 @@
 
+{-# Language OverloadedStrings #-}
+
 module Main where
 
-main = putStrLn "Bam"
+import qualified Database.HypherGraph as HG
+
+main = do
+   putStrLn "Bam"
+   -- b <- 
+   HG.openNode "test/amba"
+   --print =<< HG.runHGM HG.stats b
