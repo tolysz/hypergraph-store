@@ -3,12 +3,10 @@
            , RecordWildCards
            #-}
 module Database.HypherGraph.IO
- ( 
---openNode,
-   close
- , putNode
- , getNode
- , openMMArray
+ ( openMMArray
+ , closeMMArray
+ , putMMArrayItem
+ , getMMArrayItem
  , resizeMMArray
  ) where
 
@@ -16,9 +14,10 @@ import Database.HypherGraph.Types
 
 import System.IO.MMap
 import Foreign.Ptr
-import Foreign.ForeignPtr.Safe
+import Foreign.ForeignPtr
 
 import Foreign.Storable
+
 import qualified Filesystem      as FS
 import qualified Filesystem.Path as FS
 import qualified Filesystem.Path.CurrentOS as FS
@@ -44,8 +43,8 @@ openMMArray f = MMArray <$> ( newMVar =<< openMMArray' f minFreeRecords undefine
 resizeMMArray :: (Storable a) =>  Int ->  MMArray a -> IO ()
 resizeMMArray i (MMArray m) = (modifyMVar_ m $ resizeMMArray__ i)
 
-putNode :: Storable a => (MMArray a) -> Int -> a -> IO ()
-putNode (MMArray m) i a = modifyMVar_ m $ \g -> do
+putMMArrayItem :: Storable a => (MMArray a) -> Int -> a -> IO ()
+putMMArrayItem (MMArray m) i a = modifyMVar_ m $ \g -> do
        if (i < (maxRec g))
         then
           pokeElemOff (storeMM g) i a >> return g
@@ -54,14 +53,14 @@ putNode (MMArray m) i a = modifyMVar_ m $ \g -> do
           pokeElemOff (storeMM g1) i a
           return g1
 
-getNode ::  Storable a => (MMArray a) -> Int -> IO a
-getNode (MMArray m) i = withMVar m $ \m1 -> peekElemOff (storeMM m1) i
+getMMArrayItem ::  Storable a => (MMArray a) -> Int -> IO a
+getMMArrayItem (MMArray m) i = withMVar m $ \m1 -> peekElemOff (storeMM m1) i
 
 
 -- MMArray__{..} i | maxRec > i = pokeElemOff storeMM i
 
 
-openMMArray' :: (Storable a) => FS.FilePath -> Int -> a-> IO (MMArray__ a)
+openMMArray' :: (Storable a) => FS.FilePath -> Int -> a -> IO (MMArray__ a)
 openMMArray' file mfr a = do
     let si = (sizeOf a)
     fs <- getMinSize file si mfr
@@ -79,6 +78,10 @@ resizeMMArray__ i (MMArray__ {..}) = do
 
 allox = 1024 * 1024
 
+-- openNode :: FS.FilePath -> IO (MMArray a)
+
+-- file = openMMArray' file allox undefined
+
 open :: Storable a => FS.FilePath -> Int -> IO (Ptr a)
 open file fs = do
   a <- mmapFilePtr
@@ -90,6 +93,4 @@ open file fs = do
   let (p,_,_,_) = a
   return  p
 
-close m i = munmapFilePtr (storeMM m) i
-
-
+closeMMArray m i = munmapFilePtr (storeMM m) i

@@ -18,9 +18,10 @@ cabal-version:       >=1.10
 library
   exposed-modules:     Database.HypherGraph
                        Database.HypherGraph.Types
-                       Database.HypherGraph.IO
                        Database.HypherGraph.Utils
-  -- other-modules:       
+                       Database.HypherGraph.IO
+                       Database.HypherGraph.IO.Node
+  -- other-modules:
   -- other-extensions:    
   build-depends:       base >=4.7 && < 5
                ,       mmap
